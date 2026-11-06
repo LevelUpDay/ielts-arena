@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './lib/auth';
 import AuthGate from './components/AuthGate';
 import Layout from './components/Layout';
@@ -19,7 +19,7 @@ import ReactionGame from './concentration/ReactionGame';
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -43,7 +43,7 @@ export default function App() {
             <Route path="/writing" element={<ComingSoon title="Writing" emoji="✍️" />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   );
 }
