@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { levelForRating } from '../lib/rating';
 import RatingBadge from '../components/RatingBadge';
+import DayBadge from '../components/DayBadge';
 
 const MAIN = { key: 'mindwander', label: "Diqqat (fikr chalg'ishi)", desc: "Audio tingla, chalg'ishni payqa, tez qayt.", emoji: '🧘' };
 const EXTRA = {
@@ -18,6 +19,7 @@ export default function ConcentrationHome() {
 
   return (
     <div>
+      <DayBadge />
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">🎯 Concentration</h1>

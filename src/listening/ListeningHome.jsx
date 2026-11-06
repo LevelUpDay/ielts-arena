@@ -2,8 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { levelForRating } from '../lib/rating';
 import RatingBadge from '../components/RatingBadge';
-import { EXERCISE_TYPES, G } from './generators';
+import { EXERCISE_TYPES } from './generators';
 import { R } from '../lib/textUtils';
+import DayBadge from '../components/DayBadge';
 
 export default function ListeningHome() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function ListeningHome() {
 
   return (
     <div>
+      <DayBadge />
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">🎧 Listening</h1>

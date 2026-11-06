@@ -4,6 +4,7 @@ import { levelForRating } from '../lib/rating';
 import RatingBadge from '../components/RatingBadge';
 import { READING_TYPES } from './types';
 import { R } from '../lib/textUtils';
+import DayBadge from '../components/DayBadge';
 
 export default function ReadingHome() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function ReadingHome() {
 
   return (
     <div>
+      <DayBadge />
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">📖 Reading</h1>
