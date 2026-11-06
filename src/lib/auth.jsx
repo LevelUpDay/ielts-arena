@@ -35,9 +35,22 @@ export function AuthProvider({ children }) {
       const { data: authUser } = await supabase.auth.getUser();
       const email = authUser?.user?.email;
       const base = `${email ? email.split('@')[0] : 'guest'}_${userId.slice(0, 4)}`;
-      const { data: created } = await supabase.from('profiles')
+      const { data: created, error: profileErr } = await supabase.from('profiles')
         .upsert({ id: userId, username: base, display_name: email ? email.split('@')[0] : 'Guest' }, { onConflict: 'id' })
         .select().maybeSingle();
+      if (profileErr) {
+        // profiles.id has a hard FK to auth.users(id): this fails only when
+        // the signed-in session's own user no longer exists server-side
+        // (e.g. a guest account that was since deleted). No amount of
+        // retrying fixes that — the browser is just holding a dead session,
+        // so force a clean sign-out instead of leaving every later write
+        // (plan creation, attempts, ...) silently failing the same way.
+        try { sessionStorage.setItem('ia-session-expired', '1'); } catch { /* ignore */ }
+        await supabase.auth.signOut();
+        setSession(null); setProfile(null); setRatings(null); setPlan(null);
+        setPlanChecked(false);
+        return;
+      }
       p = created;
     }
     if (!r || r.length === 0) {
@@ -65,7 +78,7 @@ export function AuthProvider({ children }) {
       if (event === 'PASSWORD_RECOVERY') setRecovery(true);
       setSession(sess || null);
       if (sess) loadProfileAndRatings(sess.user.id);
-      else { setProfile(null); setRatings(null); }
+      else { setProfile(null); setRatings(null); setPlan(null); setPlanChecked(false); }
     });
     return () => sub.subscription.unsubscribe();
   }, [loadProfileAndRatings]);
@@ -175,7 +188,20 @@ export function AuthProvider({ children }) {
       total_days: totalDays,
       daily_minutes: dailyMinutes,
     }).select().single();
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23503') {
+        // Foreign-key violation on a brand-new write means this session's
+        // own user record is gone server-side — a dead session, not a
+        // retryable error. Force a clean sign-out so the person lands back
+        // on login instead of hitting the same failure on every retry.
+        try { sessionStorage.setItem('ia-session-expired', '1'); } catch { /* ignore */ }
+        await supabase.auth.signOut();
+        setSession(null); setProfile(null); setRatings(null); setPlan(null);
+        setPlanChecked(false);
+        throw new Error('Sessiyangiz eskirgan. Qaytadan kiring.');
+      }
+      throw error;
+    }
 
     setRatings((prev) => {
       const next = { ...prev };

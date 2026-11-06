@@ -3,6 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { AuthDivider, GoogleButton, GuestButton } from '../components/AuthExtras';
 
+function useExpiredSessionNotice() {
+  const [expired] = useState(() => {
+    try {
+      if (sessionStorage.getItem('ia-session-expired')) {
+        sessionStorage.removeItem('ia-session-expired');
+        return true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  });
+  return expired;
+}
+
 function friendlyError(msg) {
   if (!msg) return msg;
   if (msg.includes('Invalid login credentials')) return "Email yoki parol noto'g'ri.";
@@ -13,6 +26,7 @@ function friendlyError(msg) {
 export default function Login() {
   const { signIn, sendPasswordReset } = useAuth();
   const navigate = useNavigate();
+  const sessionExpired = useExpiredSessionNotice();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -87,6 +101,11 @@ export default function Login() {
         </div>
         <h1 className="mb-1 text-lg font-bold">Xush kelibsiz</h1>
         <p className="mb-5 text-sm text-black/50 dark:text-white/50">Hisobingizga kiring va mashqni davom ettiring.</p>
+        {sessionExpired && (
+          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-500/10 dark:text-amber-200">
+            Sessiyangiz eskirgan edi, shuning uchun chiqarildingiz. Iltimos, qaytadan kiring.
+          </div>
+        )}
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <input className="input" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <input className="input" type="password" placeholder="Parol" value={password} onChange={(e) => setPassword(e.target.value)} required />
