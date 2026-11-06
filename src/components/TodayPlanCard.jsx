@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { SKILLS } from '../lib/rating';
-import { buildTaskSplit, currentDay, isPlanFinished } from '../lib/plan';
+import { buildTaskSplit, currentDay, isPlanFinished, isOpenEnded } from '../lib/plan';
 
 export default function TodayPlanCard() {
   const navigate = useNavigate();
   const { plan, ratings, completeDay } = useAuth();
   const dayNum = currentDay(plan);
   const finished = isPlanFinished(plan);
+  const openEnded = isOpenEnded(plan);
   const tasks = buildTaskSplit(ratings, plan.daily_minutes);
   const [done, setDone] = useState({});
   const [busy, setBusy] = useState(false);
@@ -23,6 +24,8 @@ export default function TodayPlanCard() {
   }
 
   const labelFor = (key) => SKILLS.find((s) => s.key === key);
+  // Open-ended plan: only show days reached so far, never unreached future days.
+  const gridLength = openEnded ? dayNum : plan.total_days;
 
   return (
     <div className="card mb-6 p-5">
@@ -35,12 +38,19 @@ export default function TodayPlanCard() {
       ) : (
         <>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold">📅 Kun {dayNum} <span className="text-sm font-normal text-black/40 dark:text-white/40">/ {plan.total_days}</span></h2>
+            <h2 className="text-lg font-bold">
+              📅 Kun {dayNum} {!openEnded && <span className="text-sm font-normal text-black/40 dark:text-white/40">/ {plan.total_days}</span>}
+            </h2>
             <span className="badge bg-brand-50 text-brand-700 dark:bg-white/10 dark:text-brand-200">{plan.daily_minutes} daqiqa</span>
           </div>
+          {openEnded && (
+            <p className="mb-3 text-xs text-black/40 dark:text-white/40">
+              Umumiy kunlar soni aniqlanmagan. Xohlasangiz, Profil bo'limidan belgilashingiz mumkin.
+            </p>
+          )}
 
           <div className="mb-4 flex flex-wrap gap-1">
-            {Array.from({ length: plan.total_days }, (_, i) => i + 1).map((d) => (
+            {Array.from({ length: gridLength }, (_, i) => i + 1).map((d) => (
               <span
                 key={d}
                 className={`flex h-6 w-6 items-center justify-center rounded text-[10px] font-bold ${

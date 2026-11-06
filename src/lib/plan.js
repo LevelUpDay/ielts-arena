@@ -33,9 +33,14 @@ export function buildTaskSplit(ratings, dailyMinutes) {
 
 export function currentDay(plan) {
   if (!plan) return 1;
+  if (!plan.total_days) return plan.days_completed + 1; // open-ended plan
   return Math.min(plan.days_completed + 1, plan.total_days);
 }
 
 export function isPlanFinished(plan) {
-  return !!plan && plan.days_completed >= plan.total_days;
+  return !!plan && !!plan.total_days && plan.days_completed >= plan.total_days;
+}
+
+export function isOpenEnded(plan) {
+  return !!plan && !plan.total_days;
 }

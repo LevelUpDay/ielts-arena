@@ -20,11 +20,34 @@ export function AuthProvider({ children }) {
   }, [theme]);
 
   const loadProfileAndRatings = useCallback(async (userId) => {
-    const [{ data: p }, { data: r }, { data: pl }] = await Promise.all([
+    let [{ data: p }, { data: r }, { data: pl }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
       supabase.from('skill_ratings').select('*').eq('user_id', userId),
       supabase.from('study_plans').select('*').eq('user_id', userId).maybeSingle(),
     ]);
+
+    // Safety net: the on-signup trigger normally creates these, but an
+    // account that predates a schema change (or a linked identity that
+    // never fired the trigger) can be missing them. Self-heal so writes
+    // that reference profiles.id (e.g. study_plans) don't fail with a
+    // foreign-key error.
+    if (!p) {
+      const { data: authUser } = await supabase.auth.getUser();
+      const email = authUser?.user?.email;
+      const base = `${email ? email.split('@')[0] : 'guest'}_${userId.slice(0, 4)}`;
+      const { data: created } = await supabase.from('profiles')
+        .upsert({ id: userId, username: base, display_name: email ? email.split('@')[0] : 'Guest' }, { onConflict: 'id' })
+        .select().maybeSingle();
+      p = created;
+    }
+    if (!r || r.length === 0) {
+      const skills = ['listening', 'reading', 'concentration', 'speaking', 'writing'];
+      await supabase.from('skill_ratings')
+        .upsert(skills.map((s) => ({ user_id: userId, skill: s })), { onConflict: 'user_id,skill', ignoreDuplicates: true });
+      const { data: r2 } = await supabase.from('skill_ratings').select('*').eq('user_id', userId);
+      r = r2;
+    }
+
     setProfile(p || null);
     const map = {};
     (r || []).forEach((row) => { map[row.skill] = row; });
@@ -167,9 +190,22 @@ export function AuthProvider({ children }) {
 
   const completeDay = useCallback(async () => {
     if (!session || !plan) return null;
-    const next = Math.min(plan.days_completed + 1, plan.total_days);
+    const next = plan.total_days ? Math.min(plan.days_completed + 1, plan.total_days) : plan.days_completed + 1;
     const { data, error } = await supabase.from('study_plans')
       .update({ days_completed: next })
+      .eq('user_id', session.user.id)
+      .select().single();
+    if (error) throw error;
+    setPlan(data);
+    return data;
+  }, [session, plan]);
+
+  // Lets an open-ended plan (totalDays left "not sure" at onboarding) get a
+  // fixed length later, e.g. from Profile settings.
+  const setPlanTotalDays = useCallback(async (totalDays) => {
+    if (!session || !plan) return null;
+    const { data, error } = await supabase.from('study_plans')
+      .update({ total_days: totalDays })
       .eq('user_id', session.user.id)
       .select().single();
     if (error) throw error;
@@ -239,10 +275,10 @@ export function AuthProvider({ children }) {
     loading: session === undefined,
     isGuest: !!session?.user?.is_anonymous,
     signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt,
-    sendPasswordReset, updatePassword, createPlan, completeDay,
+    sendPasswordReset, updatePassword, createPlan, completeDay, setPlanTotalDays,
     pushToReviewBank, fetchDueReviews, countDueReviews, resolveReview,
     refresh: () => session && loadProfileAndRatings(session.user.id),
-  }), [session, profile, ratings, plan, planChecked, theme, recovery, signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt, sendPasswordReset, updatePassword, createPlan, completeDay, pushToReviewBank, fetchDueReviews, countDueReviews, resolveReview, loadProfileAndRatings]);
+  }), [session, profile, ratings, plan, planChecked, theme, recovery, signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt, sendPasswordReset, updatePassword, createPlan, completeDay, setPlanTotalDays, pushToReviewBank, fetchDueReviews, countDueReviews, resolveReview, loadProfileAndRatings]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

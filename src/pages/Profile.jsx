@@ -2,6 +2,7 @@ import { useAuth } from '../lib/auth';
 import { SKILLS, levelForRating } from '../lib/rating';
 import RatingBadge from '../components/RatingBadge';
 import VoiceSettings from '../components/VoiceSettings';
+import PlanSettings from '../components/PlanSettings';
 
 export default function Profile() {
   const { profile, ratings, session } = useAuth();
@@ -16,6 +17,7 @@ export default function Profile() {
         <p className="font-semibold">{profile?.username}</p>
       </div>
 
+      <PlanSettings />
       <VoiceSettings />
 
       <h2 className="mb-3 text-lg font-bold">Reytinglar</h2>
