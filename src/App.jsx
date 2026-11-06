@@ -11,6 +11,8 @@ import Profile from './pages/Profile';
 import ComingSoon from './pages/ComingSoon';
 import ListeningHome from './listening/ListeningHome';
 import ListeningSession from './listening/ListeningSession';
+import FullSection from './listening/FullSection';
+import ListeningStats from './listening/ListeningStats';
 import ReadingHome from './reading/ReadingHome';
 import ReadingSession from './reading/ReadingSession';
 import ConcentrationHome from './concentration/ConcentrationHome';
@@ -36,6 +38,8 @@ function AppRoutes() {
         <Route path="/profile" element={<Profile />} />
 
         <Route path="/listening" element={<ListeningHome />} />
+        <Route path="/listening/section" element={<FullSection />} />
+        <Route path="/listening/stats" element={<ListeningStats />} />
         <Route path="/listening/:type" element={<ListeningSession />} />
 
         <Route path="/reading" element={<ReadingHome />} />

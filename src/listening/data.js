@@ -180,3 +180,19 @@ export const DR = [
   ['Go past the cinema, take the third right, and the museum is at the end of the road, facing the park.',
     'Where is the museum?', ['Facing the park', 'Next to the cinema', 'On the third left'], 0],
 ];
+
+// Full sentences for whole-sentence dictation (not split into chunks).
+export const DICT_SENTENCES = [
+  'The deadline for the application has been moved to the end of the month.',
+  'Please remember to bring a valid form of identification to the exam.',
+  'The library will be closed for maintenance next Thursday and Friday.',
+  'Students are encouraged to submit their essays before the weekend.',
+  'The weather forecast suggests it will rain for most of the afternoon.',
+  'Her presentation covered three main points about renewable energy.',
+  'The committee will announce the results sometime next week.',
+  'He mentioned that the course requires at least ten hours of study a week.',
+  'The museum offers free admission to visitors under the age of sixteen.',
+  'A new bus route will connect the campus to the city centre.',
+  'The report highlighted several weaknesses in the current system.',
+  'Participants should arrive at least fifteen minutes before the session begins.',
+];

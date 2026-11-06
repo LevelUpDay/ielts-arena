@@ -177,14 +177,72 @@ export function AuthProvider({ children }) {
     return data;
   }, [session, plan]);
 
+  // Spaced-repetition error bank: wrong items come back after 1, then 3, 7, 14 days.
+  const pushToReviewBank = useCallback(async ({ skill, exerciseType, item }) => {
+    if (!session) return;
+    await supabase.from('review_items').insert({
+      user_id: session.user.id,
+      skill,
+      exercise_type: exerciseType,
+      item,
+      streak: 0,
+      due_at: new Date(Date.now() + 86400000).toISOString(),
+    });
+  }, [session]);
+
+  const fetchDueReviews = useCallback(async (skill, limit = 8) => {
+    if (!session) return [];
+    const { data } = await supabase.from('review_items')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .eq('skill', skill)
+      .lte('due_at', new Date().toISOString())
+      .order('due_at', { ascending: true })
+      .limit(limit);
+    return data || [];
+  }, [session]);
+
+  const countDueReviews = useCallback(async (skill) => {
+    if (!session) return 0;
+    const { count } = await supabase.from('review_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', session.user.id)
+      .eq('skill', skill)
+      .lte('due_at', new Date().toISOString());
+    return count || 0;
+  }, [session]);
+
+  const INTERVALS_DAYS = [3, 7, 14];
+  const resolveReview = useCallback(async (reviewId, good) => {
+    if (!session) return;
+    if (!good) {
+      await supabase.from('review_items').update({
+        streak: 0,
+        due_at: new Date(Date.now() + 86400000).toISOString(),
+      }).eq('id', reviewId).eq('user_id', session.user.id);
+      return;
+    }
+    const { data } = await supabase.from('review_items').select('streak').eq('id', reviewId).maybeSingle();
+    const nextStreak = (data?.streak ?? 0) + 1;
+    if (nextStreak >= 4) {
+      await supabase.from('review_items').delete().eq('id', reviewId).eq('user_id', session.user.id);
+    } else {
+      await supabase.from('review_items').update({
+        streak: nextStreak,
+        due_at: new Date(Date.now() + INTERVALS_DAYS[nextStreak - 1] * 86400000).toISOString(),
+      }).eq('id', reviewId).eq('user_id', session.user.id);
+    }
+  }, [session]);
+
   const value = useMemo(() => ({
     session, profile, ratings, theme, setTheme, recovery, plan, planChecked,
     loading: session === undefined,
     isGuest: !!session?.user?.is_anonymous,
     signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt,
     sendPasswordReset, updatePassword, createPlan, completeDay,
+    pushToReviewBank, fetchDueReviews, countDueReviews, resolveReview,
     refresh: () => session && loadProfileAndRatings(session.user.id),
-  }), [session, profile, ratings, plan, planChecked, theme, recovery, signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt, sendPasswordReset, updatePassword, createPlan, completeDay, loadProfileAndRatings]);
+  }), [session, profile, ratings, plan, planChecked, theme, recovery, signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt, sendPasswordReset, updatePassword, createPlan, completeDay, pushToReviewBank, fetchDueReviews, countDueReviews, resolveReview, loadProfileAndRatings]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

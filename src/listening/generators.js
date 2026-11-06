@@ -1,10 +1,11 @@
 import { R, shuf } from '../lib/textUtils';
-import { W, PAIRS, NAMES, DAYS, WORDS, SENT, PW, HY, PA, PR, MB, MC, DR } from './data';
+import { W, PAIRS, NAMES, DAYS, WORDS, SENT, PW, HY, PA, PR, MB, MC, DR, DICT_SENTENCES } from './data';
 
 export const EXERCISE_TYPES = {
   nums: 'Numbers (th/f)',
   spell: 'Spelling',
   chunk: 'Chunk dictation',
+  dictate: 'Full-sentence dictation',
   thf: 'th/f listening',
   corr: 'Self-correction (distractor)',
   letters: 'Letters & surnames',
@@ -76,6 +77,12 @@ export const G = {
       }
     }
     return o;
+  },
+
+  dictate() {
+    return shuf(DICT_SENTENCES).slice(0, 5).map((s, i) => ({
+      say: s, p: `Gap ${i + 1} — to'liq yoz`, t: 'dict', a: s, w: '', plays: 3,
+    }));
   },
 
   corr() {

@@ -33,6 +33,13 @@ export function tierForRating(rating) {
   return 3;
 }
 
+// Continuous playback-speed scaling: slow near the bottom of the scale,
+// natural pace near the top — smoother than the old fixed 3-step jump.
+export function rateForRating(rating) {
+  const t = Math.max(0, Math.min(1, (rating - MIN_RATING) / (MAX_RATING - MIN_RATING)));
+  return Math.round((0.85 + t * 0.4) * 100) / 100; // 0.85x .. 1.25x
+}
+
 function expectedScore(a, b) {
   return 1 / (1 + Math.pow(10, (b - a) / 400));
 }
