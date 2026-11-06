@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
 import AuthGate, { OnboardingGate } from './components/AuthGate';
 import Layout from './components/Layout';
@@ -20,6 +20,15 @@ import MindWanderGame from './concentration/MindWanderGame';
 import StroopGame from './concentration/StroopGame';
 import NBackGame from './concentration/NBackGame';
 
+// Remounts the wrapped component whenever the :type route param changes —
+// React Router reuses the component instance for sibling param matches, so
+// without this, switching from e.g. /listening/thf to /listening/match keeps
+// stale generated items around instead of generating fresh ones.
+function KeyedByType({ Component }) {
+  const { type } = useParams();
+  return <Component key={type} />;
+}
+
 function AppRoutes() {
   const { recovery } = useAuth();
 
@@ -40,10 +49,10 @@ function AppRoutes() {
         <Route path="/listening" element={<ListeningHome />} />
         <Route path="/listening/section" element={<FullSection />} />
         <Route path="/listening/stats" element={<ListeningStats />} />
-        <Route path="/listening/:type" element={<ListeningSession />} />
+        <Route path="/listening/:type" element={<KeyedByType Component={ListeningSession} />} />
 
         <Route path="/reading" element={<ReadingHome />} />
-        <Route path="/reading/:type" element={<ReadingSession />} />
+        <Route path="/reading/:type" element={<KeyedByType Component={ReadingSession} />} />
 
         <Route path="/concentration" element={<ConcentrationHome />} />
         <Route path="/concentration/mindwander" element={<MindWanderGame />} />
