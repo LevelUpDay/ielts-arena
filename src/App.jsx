@@ -13,9 +13,9 @@ import ListeningSession from './listening/ListeningSession';
 import ReadingHome from './reading/ReadingHome';
 import ReadingSession from './reading/ReadingSession';
 import ConcentrationHome from './concentration/ConcentrationHome';
+import MindWanderGame from './concentration/MindWanderGame';
 import StroopGame from './concentration/StroopGame';
 import NBackGame from './concentration/NBackGame';
-import ReactionGame from './concentration/ReactionGame';
 
 function AppRoutes() {
   const { recovery } = useAuth();
@@ -40,9 +40,9 @@ function AppRoutes() {
         <Route path="/reading/:type" element={<ReadingSession />} />
 
         <Route path="/concentration" element={<ConcentrationHome />} />
+        <Route path="/concentration/mindwander" element={<MindWanderGame />} />
         <Route path="/concentration/stroop" element={<StroopGame />} />
         <Route path="/concentration/nback" element={<NBackGame />} />
-        <Route path="/concentration/reaction" element={<ReactionGame />} />
 
         <Route path="/speaking" element={<ComingSoon title="Speaking" emoji="🗣️" />} />
         <Route path="/writing" element={<ComingSoon title="Writing" emoji="✍️" />} />
