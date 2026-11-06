@@ -4,11 +4,10 @@ export const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 export const CEFR_RATING = { A1: 300, A2: 650, B1: 1050, B2: 1500, C1: 2000, C2: 2500 };
 
 export const REFERRAL_OPTIONS = [
-  "Do'stimdan",
-  'Instagram',
-  'Telegram',
-  "O'qituvchim / kursdan",
-  "O'zim qidirib topdim",
+  'AI',
+  "Do'stlarim",
+  'YouTube',
+  'Social media',
   'Boshqa',
 ];
 
