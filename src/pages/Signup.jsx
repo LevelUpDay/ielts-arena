@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { AuthDivider, GoogleButton, GuestButton } from '../components/AuthExtras';
+
+function friendlyError(msg) {
+  if (!msg) return msg;
+  if (msg.includes('rate limit')) return "Hozir juda ko'p urinish bo'ldi, biroz kutib qaytadan urining (1 soatcha).";
+  if (msg.includes('already registered') || msg.includes('already exists')) return 'Bu email bilan hisob allaqachon bor. Kirish sahifasidan foydalaning.';
+  if (msg.includes('invalid') && msg.includes('mail')) return "Email manzili noto'g'ri ko'rinmoqda.";
+  return msg;
+}
 
 export default function Signup() {
   const { signUp } = useAuth();
@@ -20,7 +29,7 @@ export default function Signup() {
       if (data.session) navigate('/');
       else setSent(true);
     } catch (err) {
-      setError(err.message || "Ro'yxatdan o'tishda xatolik");
+      setError(friendlyError(err.message) || "Ro'yxatdan o'tishda xatolik");
     } finally {
       setBusy(false);
     }
@@ -57,6 +66,13 @@ export default function Signup() {
           {error && <p className="text-sm text-red-500">{error}</p>}
           <button className="btn-primary mt-1" disabled={busy}>{busy ? '...' : 'Boshlash'}</button>
         </form>
+
+        <AuthDivider />
+        <div className="flex flex-col gap-2">
+          <GoogleButton />
+          <GuestButton />
+        </div>
+
         <p className="mt-5 text-center text-sm text-black/50 dark:text-white/50">
           Hisobingiz bormi? <Link to="/login" className="font-semibold text-brand-600 dark:text-brand-300">Kirish</Link>
         </p>

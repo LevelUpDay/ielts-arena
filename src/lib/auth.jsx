@@ -55,6 +55,20 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + import.meta.env.BASE_URL },
+    });
+    if (error) throw error;
+  }, []);
+
+  const signInAsGuest = useCallback(async () => {
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error) throw error;
+    return data;
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
   }, []);
@@ -102,9 +116,10 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     session, profile, ratings, theme, setTheme,
     loading: session === undefined,
-    signUp, signIn, signOut, recordAttempt,
+    isGuest: !!session?.user?.is_anonymous,
+    signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt,
     refresh: () => session && loadProfileAndRatings(session.user.id),
-  }), [session, profile, ratings, theme, signUp, signIn, signOut, recordAttempt, loadProfileAndRatings]);
+  }), [session, profile, ratings, theme, signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt, loadProfileAndRatings]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { AuthDivider, GoogleButton, GuestButton } from '../components/AuthExtras';
 
 export default function Login() {
   const { signIn } = useAuth();
@@ -38,6 +39,13 @@ export default function Login() {
           {error && <p className="text-sm text-red-500">{error}</p>}
           <button className="btn-primary mt-1" disabled={busy}>{busy ? '...' : 'Kirish'}</button>
         </form>
+
+        <AuthDivider />
+        <div className="flex flex-col gap-2">
+          <GoogleButton />
+          <GuestButton />
+        </div>
+
         <p className="mt-5 text-center text-sm text-black/50 dark:text-white/50">
           Hisobingiz yo'qmi? <Link to="/signup" className="font-semibold text-brand-600 dark:text-brand-300">Ro'yxatdan o'tish</Link>
         </p>
