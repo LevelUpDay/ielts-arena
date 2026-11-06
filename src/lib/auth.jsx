@@ -9,6 +9,7 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [ratings, setRatings] = useState(null); // { listening: {rating, placement_done, ...}, ... }
   const [theme, setTheme] = useState(() => localStorage.getItem('ia-theme') || 'light');
+  const [recovery, setRecovery] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -31,7 +32,8 @@ export function AuthProvider({ children }) {
       setSession(data.session || null);
       if (data.session) loadProfileAndRatings(data.session.user.id);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true);
       setSession(sess || null);
       if (sess) loadProfileAndRatings(sess.user.id);
       else { setProfile(null); setRatings(null); }
@@ -67,6 +69,19 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signInAnonymously();
     if (error) throw error;
     return data;
+  }, []);
+
+  const sendPasswordReset = useCallback(async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + import.meta.env.BASE_URL,
+    });
+    if (error) throw error;
+  }, []);
+
+  const updatePassword = useCallback(async (password) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+    setRecovery(false);
   }, []);
 
   const signOut = useCallback(async () => {
@@ -114,12 +129,13 @@ export function AuthProvider({ children }) {
   }, [session, ratings]);
 
   const value = useMemo(() => ({
-    session, profile, ratings, theme, setTheme,
+    session, profile, ratings, theme, setTheme, recovery,
     loading: session === undefined,
     isGuest: !!session?.user?.is_anonymous,
     signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt,
+    sendPasswordReset, updatePassword,
     refresh: () => session && loadProfileAndRatings(session.user.id),
-  }), [session, profile, ratings, theme, signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt, loadProfileAndRatings]);
+  }), [session, profile, ratings, theme, recovery, signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt, sendPasswordReset, updatePassword, loadProfileAndRatings]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
