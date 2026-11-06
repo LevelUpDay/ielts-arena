@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from './supabase';
 import { DEFAULT_RATING, updateRating } from './rating';
+import { CEFR_RATING } from './plan';
 
 const AuthContext = createContext(null);
 
@@ -8,6 +9,8 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined); // undefined = loading, null = signed out
   const [profile, setProfile] = useState(null);
   const [ratings, setRatings] = useState(null); // { listening: {rating, placement_done, ...}, ... }
+  const [plan, setPlan] = useState(null); // undefined-free: null = no plan yet (or not loaded)
+  const [planChecked, setPlanChecked] = useState(false); // true once we know whether a plan exists
   const [theme, setTheme] = useState(() => localStorage.getItem('ia-theme') || 'light');
   const [recovery, setRecovery] = useState(false);
 
@@ -17,14 +20,17 @@ export function AuthProvider({ children }) {
   }, [theme]);
 
   const loadProfileAndRatings = useCallback(async (userId) => {
-    const [{ data: p }, { data: r }] = await Promise.all([
+    const [{ data: p }, { data: r }, { data: pl }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
       supabase.from('skill_ratings').select('*').eq('user_id', userId),
+      supabase.from('study_plans').select('*').eq('user_id', userId).maybeSingle(),
     ]);
     setProfile(p || null);
     const map = {};
     (r || []).forEach((row) => { map[row.skill] = row; });
     setRatings(map);
+    setPlan(pl || null);
+    setPlanChecked(true);
   }, []);
 
   useEffect(() => {
@@ -128,14 +134,57 @@ export function AuthProvider({ children }) {
     return { before, after, delta: after - before, placementDone };
   }, [session, ratings]);
 
+  // Onboarding: optional CEFR self-report per skill, then a day/time-budget plan.
+  const createPlan = useCallback(async ({ referral, totalDays, dailyMinutes, cefrBySkill }) => {
+    if (!session) return null;
+    const userId = session.user.id;
+    const cefrEntries = Object.entries(cefrBySkill || {}).filter(([, v]) => v);
+    await Promise.all(cefrEntries.map(([skill, level]) =>
+      supabase.from('skill_ratings').update({
+        rating: CEFR_RATING[level],
+        placement_done: true,
+        updated_at: new Date().toISOString(),
+      }).eq('user_id', userId).eq('skill', skill),
+    ));
+    const { data: pl, error } = await supabase.from('study_plans').insert({
+      user_id: userId,
+      referral_source: referral || null,
+      total_days: totalDays,
+      daily_minutes: dailyMinutes,
+    }).select().single();
+    if (error) throw error;
+
+    setRatings((prev) => {
+      const next = { ...prev };
+      cefrEntries.forEach(([skill, level]) => {
+        next[skill] = { ...(next[skill] || {}), rating: CEFR_RATING[level], placement_done: true };
+      });
+      return next;
+    });
+    setPlan(pl);
+    return pl;
+  }, [session]);
+
+  const completeDay = useCallback(async () => {
+    if (!session || !plan) return null;
+    const next = Math.min(plan.days_completed + 1, plan.total_days);
+    const { data, error } = await supabase.from('study_plans')
+      .update({ days_completed: next })
+      .eq('user_id', session.user.id)
+      .select().single();
+    if (error) throw error;
+    setPlan(data);
+    return data;
+  }, [session, plan]);
+
   const value = useMemo(() => ({
-    session, profile, ratings, theme, setTheme, recovery,
+    session, profile, ratings, theme, setTheme, recovery, plan, planChecked,
     loading: session === undefined,
     isGuest: !!session?.user?.is_anonymous,
     signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt,
-    sendPasswordReset, updatePassword,
+    sendPasswordReset, updatePassword, createPlan, completeDay,
     refresh: () => session && loadProfileAndRatings(session.user.id),
-  }), [session, profile, ratings, theme, recovery, signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt, sendPasswordReset, updatePassword, loadProfileAndRatings]);
+  }), [session, profile, ratings, plan, planChecked, theme, recovery, signUp, signIn, signInWithGoogle, signInAsGuest, signOut, recordAttempt, sendPasswordReset, updatePassword, createPlan, completeDay, loadProfileAndRatings]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

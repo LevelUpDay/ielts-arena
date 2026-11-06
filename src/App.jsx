@@ -1,10 +1,11 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
-import AuthGate from './components/AuthGate';
+import AuthGate, { OnboardingGate } from './components/AuthGate';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ResetPassword from './pages/ResetPassword';
+import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import ComingSoon from './pages/ComingSoon';
@@ -28,6 +29,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/onboarding" element={<OnboardingGate><Onboarding /></OnboardingGate>} />
 
       <Route element={<AuthGate><Layout /></AuthGate>}>
         <Route path="/" element={<Dashboard />} />

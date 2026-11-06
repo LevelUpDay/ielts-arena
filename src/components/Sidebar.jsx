@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { SKILLS } from '../lib/rating';
 import { useAuth } from '../lib/auth';
 import RatingBadge from './RatingBadge';
@@ -8,10 +8,10 @@ export default function Sidebar() {
   const { ratings } = useAuth();
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r border-black/5 bg-white dark:border-white/10 dark:bg-[#18131c]">
-      <div className="flex items-center gap-2 px-4 py-5">
+      <Link to="/" className="flex items-center gap-2 px-4 py-5 hover:opacity-80">
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 text-base font-black text-white">A</span>
         <span className="text-lg font-extrabold tracking-tight">IELTS Arena</span>
-      </div>
+      </Link>
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2">
         {SKILLS.map((s) => (
           <NavLink
